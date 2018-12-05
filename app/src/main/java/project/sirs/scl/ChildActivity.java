@@ -1,13 +1,13 @@
 package project.sirs.scl;
 
 import android.content.Intent;
-import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -21,7 +21,9 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.UnsupportedEncodingException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -93,20 +95,23 @@ public class ChildActivity extends AppCompatActivity {
             btn_sign_in.setVisibility(View.VISIBLE);
         }
         if (getIntent().hasExtra("code")) {
-            byte[] keydata = getIntent().getExtras().getByteArray("code");
-            startTransmissionProcess(keydata);
+            //String keydata = getIntent().getExtras().getString("code");
+            SecretKey keydata = new Cryptography().generateSecretKey();
+            //startTransmissionProcess(keydata);
+            crypto = new Cryptography();
+            crypto.setSharedKey(keydata);
             gps = new GpsData(ChildActivity.this);
             final DatabaseReference reference = database.getReference("gpsData");
             new Timer().scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
-                    byte[] cipherText;
-                    Location loc = gps.getLocation();
-                    double latitude = loc.getLatitude();
-                    double longitude = loc.getLongitude();
+                    String cipherText;
+                    double latitude = gps.getLatitude();
+                    double longitude = gps.getLongitude();
                     String message = new StringBuilder().append(latitude).append(" ").append(longitude).append(" ").append(crypto.incrementSeqNumber()).toString();
+                    System.out.println(message);
                     try {
-                        cipherText = crypto.encrypt(crypto.generateHmac(message));
+                        cipherText = crypto.encrypt(Base64.encodeToString(crypto.generateHmac(message),0));
                         reference.setValue(cipherText);
                         progressBar.setVisibility(View.VISIBLE);
                         text_progress.setVisibility(View.VISIBLE);
@@ -150,9 +155,13 @@ public class ChildActivity extends AppCompatActivity {
 
     }
 
-    private void startTransmissionProcess(final byte[] keydata) {
+    private void startTransmissionProcess(String keydata) {
         crypto = new Cryptography();
-        crypto.setSharedKey(new SecretKeySpec(keydata, "AES"));
+        try {
+            crypto.setSharedKey(new SecretKeySpec(keydata.getBytes("UTF-8"), "AES"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
 
 
     }

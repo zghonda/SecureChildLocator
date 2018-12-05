@@ -33,7 +33,7 @@ public class GpsData extends Service implements LocationListener {
 
     public GpsData(Context mContext) {
         this.mContext = mContext;
-        getLocation();
+        location = getLocation();
     }
 
     public Location getLocation() {
@@ -41,8 +41,10 @@ public class GpsData extends Service implements LocationListener {
             locationManager = (LocationManager) mContext
                     .getSystemService(LOCATION_SERVICE);
             // getting GPS status
-            isEnabled = locationManager
-                    .isProviderEnabled(LocationManager.GPS_PROVIDER);
+            if (locationManager != null) {
+                isEnabled = locationManager
+                        .isProviderEnabled(LocationManager.GPS_PROVIDER);
+            }
 
             // if GPS Enabled get lat/long using GPS Services
             if (isEnabled) {

@@ -88,16 +88,22 @@ public class ScanActivity2 extends AppCompatActivity {
             @Override
             public void receiveDetections(Detector.Detections<Barcode> detections) {
                 SparseArray<Barcode> qrcodes = detections.getDetectedItems();
+                System.out.println(qrcodes);
                 if(qrcodes.size()!=0){
                     Intent childIntent = new Intent(getApplicationContext(),ChildActivity.class);
-                    String qr = qrcodes.get(0).rawValue;
+                    String qr = qrcodes.valueAt(0).displayValue;
                     System.out.println("QR = "+qr);
-                    childIntent.putExtra("code",qr.getBytes());
+                    childIntent.putExtra("code",qr);
                     startActivity(childIntent);
                 }
             }
         });
 
         }
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+        cameraSource.release();
+    }
 
 }

@@ -1,9 +1,12 @@
 package project.sirs.scl;
 
+import android.util.Base64;
+
 import javax.crypto.*;
 import javax.security.auth.DestroyFailedException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
 public final class Cryptography {
 
@@ -29,26 +32,27 @@ public final class Cryptography {
 
     /**
      *
-     * @param data
+     * @param plainText
      * @return
      * @throws Exception
      */
-    public byte[] encrypt(byte[] data ) throws Exception {
+    public String encrypt(String plainText ) throws Exception {
         checkPrecondition();
         cipher.init(Cipher.ENCRYPT_MODE, sharedKey);
-        return cipher.doFinal(data);
+        return Base64.encodeToString(cipher.doFinal(plainText.getBytes("UTF-8")),0);
+
     }
 
     /**
      *
-     * @param data
+     * @param cipherText
      * @return
      * @throws Exception
      */
-    public byte[] decrypt(byte[] data)  throws Exception{
+    public String decrypt(String cipherText)  throws Exception{
         checkPrecondition();
         cipher.init(Cipher.DECRYPT_MODE, sharedKey);
-        return cipher.doFinal(data);
+        return new String(cipher.doFinal(Base64.decode(cipherText,0)),"UTF-8");
 
     }
 
@@ -85,7 +89,8 @@ public final class Cryptography {
         KeyGenerator keygen = null;
         try {
             keygen = KeyGenerator.getInstance("AES");
-            keygen.init(128);
+            SecureRandom rand = new SecureRandom();
+            keygen.init(256,rand);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
@@ -101,11 +106,14 @@ public final class Cryptography {
     }
 
     public void setSharedKey(SecretKey key) {
-        try {
-            this.sharedKey.destroy();
-        } catch (DestroyFailedException e) {
-            e.printStackTrace();
+        if(this.sharedKey != null){
+            try {
+                this.sharedKey.destroy();
+            } catch (DestroyFailedException e) {
+                e.printStackTrace();
+            }
         }
+
 
         this.sharedKey = key;
 

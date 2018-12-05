@@ -12,8 +12,8 @@ public class CryptographyTest {
         Cryptography crypto = new Cryptography();
         SecretKey key = crypto.generateSecretKey();
         String text = "hello world";
-        System.out.println(text.getBytes());
-        byte[] cipherText = crypto.encrypt(text.getBytes());
+        System.out.println(new String(key.getEncoded(),"UTF-8"));
+        String cipherText = crypto.encrypt(text);
         System.out.println(cipherText);
         System.out.println(crypto.decrypt(cipherText));
 
