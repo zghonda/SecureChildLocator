@@ -38,6 +38,7 @@ public class ChildActivity extends AppCompatActivity {
     private static final int BROADCAST_TIME_PERIOD = 5 * 1000;
     private ProgressBar progressBar;
     private TextView text_progress;
+    private DatabaseReference reference   ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +65,8 @@ public class ChildActivity extends AppCompatActivity {
         btn_qr = (Button) findViewById(R.id.btn_qr);
         progressBar = (ProgressBar) findViewById(R.id.progress_infinite);
         text_progress = (TextView) findViewById(R.id.progress_text);
+        gps = new GpsData(ChildActivity.this);
+        reference = database.getReference("gpsData");
 
         btn_sign_in.setOnClickListener(
                 new View.OnClickListener() {
@@ -100,8 +103,7 @@ public class ChildActivity extends AppCompatActivity {
             //startTransmissionProcess(keydata);
             crypto = new Cryptography();
             crypto.setSharedKey(keydata);
-            gps = new GpsData(ChildActivity.this);
-            final DatabaseReference reference = database.getReference("gpsData");
+
             new Timer().scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
