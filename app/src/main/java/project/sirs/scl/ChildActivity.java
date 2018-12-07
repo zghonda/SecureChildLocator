@@ -35,7 +35,7 @@ public class ChildActivity extends AppCompatActivity {
     private Button btn_sign_in, btn_qr;
     private Cryptography crypto;
     private GpsData gps;
-    private static final int BROADCAST_TIME_PERIOD = 5 * 1000;
+    private static final int BROADCAST_TIME_PERIOD = 20 * 1000;
     private ProgressBar progressBar;
     private TextView text_progress;
     private DatabaseReference reference   ;
@@ -67,6 +67,7 @@ public class ChildActivity extends AppCompatActivity {
         text_progress = (TextView) findViewById(R.id.progress_text);
         gps = new GpsData(ChildActivity.this);
         reference = database.getReference("gpsData");
+        crypto = new Cryptography();
 
         btn_sign_in.setOnClickListener(
                 new View.OnClickListener() {
@@ -101,8 +102,11 @@ public class ChildActivity extends AppCompatActivity {
             //String keydata = getIntent().getExtras().getString("code");
             SecretKey keydata = new Cryptography().generateSecretKey();
             //startTransmissionProcess(keydata);
-            crypto = new Cryptography();
             crypto.setSharedKey(keydata);
+            progressBar.setVisibility(View.VISIBLE);
+            text_progress.setVisibility(View.VISIBLE);
+            btn_qr.setVisibility(View.INVISIBLE);
+            text_progress.setText("Sending location ..");
 
             new Timer().scheduleAtFixedRate(new TimerTask() {
                 @Override
@@ -115,9 +119,7 @@ public class ChildActivity extends AppCompatActivity {
                     try {
                         cipherText = crypto.encrypt(Base64.encodeToString(crypto.generateHmac(message),0));
                         reference.setValue(cipherText);
-                        progressBar.setVisibility(View.VISIBLE);
-                        text_progress.setVisibility(View.VISIBLE);
-                        text_progress.setText("Sending location ..");
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -131,6 +133,8 @@ public class ChildActivity extends AppCompatActivity {
 
     }
 
+
+
     private void signIn() {
         final TextView status = (TextView) findViewById(R.id.txt_auth_status);
 
@@ -140,10 +144,11 @@ public class ChildActivity extends AppCompatActivity {
                 if (task.isSuccessful()) {
                     Toast.makeText(getApplicationContext(), "Authentication success !!", Toast.LENGTH_LONG).show();
                     btn_qr.setVisibility(View.VISIBLE);
+                    btn_sign_in.setVisibility(View.INVISIBLE);
                 } else {
                     status.setText(R.string.error_authentication);
                     status.setVisibility(View.VISIBLE);
-                    btn_sign_in.setVisibility(View.INVISIBLE);
+
                 }
             }
         });
@@ -153,6 +158,7 @@ public class ChildActivity extends AppCompatActivity {
     private void launchScan() {
 
         Intent intent = new Intent(getApplicationContext(), ScanActivity2.class);
+        this.finish();
         startActivity(intent);
 
     }
@@ -167,7 +173,10 @@ public class ChildActivity extends AppCompatActivity {
 
 
     }
-
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+    }
 
 }
 

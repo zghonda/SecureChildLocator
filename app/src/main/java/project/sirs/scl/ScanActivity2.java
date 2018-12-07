@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -23,6 +24,7 @@ public class ScanActivity2 extends AppCompatActivity {
     private BarcodeDetector barcodeDetector;
     private CameraSource cameraSource;
     private final int RequestCameraPermissionID = 1001;
+    private Handler handler;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -47,7 +49,7 @@ public class ScanActivity2 extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scan2);
 
-
+        handler = new Handler();
         cameraPreview = findViewById(R.id.surfaceView);
         barcodeDetector = new BarcodeDetector.Builder(this).setBarcodeFormats(Barcode.QR_CODE).build();
         cameraSource = new CameraSource.Builder(this, barcodeDetector).setRequestedPreviewSize(640,480).build();
@@ -80,21 +82,28 @@ public class ScanActivity2 extends AppCompatActivity {
         });
 
         barcodeDetector.setProcessor(new Detector.Processor<Barcode>() {
+
             @Override
             public void release() {
-
             }
 
             @Override
             public void receiveDetections(Detector.Detections<Barcode> detections) {
-                SparseArray<Barcode> qrcodes = detections.getDetectedItems();
-                System.out.println(qrcodes);
+                final SparseArray<Barcode> qrcodes = detections.getDetectedItems();
                 if(qrcodes.size()!=0){
-                    Intent childIntent = new Intent(getApplicationContext(),ChildActivity.class);
-                    String qr = qrcodes.valueAt(0).displayValue;
-                    System.out.println("QR = "+qr);
-                    childIntent.putExtra("code",qr);
-                    startActivity(childIntent);
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Intent childIntent = new Intent(getApplicationContext(),ChildActivity.class);
+                            String qr = qrcodes.valueAt(0).displayValue;
+                            System.out.println("QR = "+qr);
+                            childIntent.putExtra("code",qr);
+                            finish();
+                            startActivity(childIntent);
+                        }
+                    });
+
+
                 }
             }
         });
