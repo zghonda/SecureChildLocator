@@ -25,6 +25,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
 import java.util.Base64;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 public class ParentActivity extends AppCompatActivity {
@@ -188,11 +189,16 @@ public class ParentActivity extends AppCompatActivity {
                     if (!myMac.equals(macReceived)) {
                         throw new Exception("authentication/integrity problem");
                     }
-                    txt_gps_data.setText(message);
+                    String[] data = message.split(" ");
+                    double longitude = Double.parseDouble(data[0]);
+                    double latitude  = Double.parseDouble(data[1]);
+                    double seq = Double.parseDouble(data[2]);
+
+                    txt_gps_data.setText(String.format(Locale.getDefault(),"longitude : %2.2f, latitude : %2.2f",longitude,latitude));
+
 
                 } catch (Exception e) {
                     e.printStackTrace();
-
                 }
 
             }
@@ -222,11 +228,9 @@ public class ParentActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mAuth.signOut();
 
     }
 }

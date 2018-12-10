@@ -119,8 +119,8 @@ public class ChildActivity extends AppCompatActivity {
 
     private void sendData() {
         String cipherText;
-        double latitude = gps.getLatitude();
-        double longitude = gps.getLongitude();
+        double latitude = gps.getLocation().getLatitude();
+        double longitude = gps.getLocation().getLongitude();
         counter = crypto.incrementSeqNumber();
         String refStringJournal = new StringBuilder("gpsData_").append(counter).toString();
         referenceJournal = database.getReference(refStringJournal);
