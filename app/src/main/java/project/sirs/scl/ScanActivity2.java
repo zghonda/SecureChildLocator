@@ -96,14 +96,11 @@ public class ScanActivity2 extends AppCompatActivity {
                         public void run() {
                             Intent childIntent = new Intent(getApplicationContext(),ChildActivity.class);
                             String qr = qrcodes.valueAt(0).displayValue;
-                            System.out.println("QR = "+qr);
                             childIntent.putExtra("code",qr);
                             finish();
                             startActivity(childIntent);
                         }
                     });
-
-
                 }
             }
         });

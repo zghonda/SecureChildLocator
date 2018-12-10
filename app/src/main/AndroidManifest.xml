@@ -30,7 +30,7 @@
         </activity>
         <activity
                 android:name=".ChildActivity"
-                android:label="@string/title_activity_child"
+                android:label="Welcome Child"
                 android:parentActivityName=".MainActivity"
                 android:theme="@style/AppTheme.NoActionBar">
             <meta-data
@@ -39,7 +39,7 @@
         </activity>
         <activity
                 android:name=".ParentActivity"
-                android:label="@string/title_activity_parent"
+                android:label="Welcome Parent"
                 android:theme="@style/AppTheme.NoActionBar">
         </activity>
 
@@ -49,7 +49,17 @@
 
         <activity
                 android:name=".ScanActivity2"
-                android:label="@string/title_activity_scan2"
+                android:label="Key Scanner"
+                android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+        <activity
+                android:name=".QRActivity"
+                android:parentActivityName=".ParentActivity"
+                android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+        <activity
+                android:name=".ScanActivity"
+                android:label="@string/title_activity_scan"
                 android:theme="@style/AppTheme.NoActionBar">
         </activity>
     </application>
