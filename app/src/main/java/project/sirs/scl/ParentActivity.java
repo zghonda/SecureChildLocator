@@ -7,6 +7,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Base64DataException;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -202,6 +203,9 @@ public class ParentActivity extends AppCompatActivity {
 
 
     private void verifyPacketAndSetData(String packet) throws Exception {
+        try{
+
+
         String macReceived;
         String myMac;
         String[] plainTextIV = packet.split("separation");
@@ -230,9 +234,10 @@ public class ParentActivity extends AppCompatActivity {
         reference = database.getReference(ref);
 
         txt_gps_data.setText(String.format(Locale.getDefault(), "longitude : %2.2f, latitude : %2.2f", longitude, latitude));
-
+    }catch(Base64DataException e){
+            throw e;
+        }
     }
-
 
 
     private void generateKeyAndQR() {
