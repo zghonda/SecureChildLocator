@@ -45,8 +45,9 @@ public class ParentActivity extends AppCompatActivity {
     private boolean isKeyGenerated;
     private final static String FILENAME = "keyfileParent.pem";
     private double longitude, latitude;
-    private static final int BROADCAST_TIME_PERIOD = 20 * 1000;
+    private static final int BROADCAST_TIME_PERIOD = 10 * 1000;
     private String ref;
+    private long i = motherCounter;
 
 
     @Override
@@ -164,37 +165,36 @@ public class ParentActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         findViewById(R.id.btn_start).setVisibility(View.INVISIBLE);
 
+
+
         new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                String ref = new StringBuilder("gpsData_").append(motherCounter).toString();
+                String ref = new StringBuilder("gpsData_").append(i).toString();
                 reference = database.getReference(ref);
 
-
-                    reference.addValueEventListener(new ValueEventListener() {
+                    reference.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            try {
-                                verifyPacketAndSetData(dataSnapshot.getValue(String.class));
-                                reference.removeEventListener(this);
-
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                                txt_gps_data.setText(e.getMessage());
+                            String value = dataSnapshot.getValue(String.class);
+                            if(value != null){
+                                try {
+                                    verifyPacketAndSetData(value);
+                                    reference.removeEventListener(this);
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                    txt_gps_data.setText(e.getMessage());
+                                }
                             }
-                        }
 
+                        }
                         @Override
                         public void onCancelled(@NonNull DatabaseError databaseError) {
 
                         }
                     });
 
-
-
-
-
-
+                i++;
             }
         }, 0, BROADCAST_TIME_PERIOD);
 

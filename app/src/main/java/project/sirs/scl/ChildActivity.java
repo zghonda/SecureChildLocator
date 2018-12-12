@@ -28,7 +28,7 @@ public class ChildActivity extends AppCompatActivity {
     private Button btn_qr;
     private Cryptography crypto;
     private GpsData gps;
-    private static final int BROADCAST_TIME_PERIOD = 10 * 1000;
+    private static final int BROADCAST_TIME_PERIOD = 15 * 1000;
     private ProgressBar progressBar;
     private TextView text_progress;
     private DatabaseReference referenceJournal,reference;
