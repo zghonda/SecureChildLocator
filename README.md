@@ -41,7 +41,7 @@ Only one basic test is provided to test the crypto machinary. it consists of tex
 
 We will thus try to alter the integrity of some data in live to see how our app reacts.
 
- 
+We will provide all explanations in the report. 
 
 
   
