@@ -37,3 +37,12 @@ IMPORTANT: Since normally we need at least two phones for testing correctly we w
 11- You can go back to the parent and see the location of the child in realtime (in this example you will have predefined location). 
 
 We will show the demonstration app at the presentation in case the instructions are not clear.
+Only one basic test is provided to test the crypto machinary. it consists of text = decrypt(encrypt(test)). we used private tests for all the machinery of our code but we don't consider the necessity of sending them to you since the course is not about software engineering.
+
+We will thus try to alter the integrity of some data in live to see how our app reacts.
+
+ 
+
+
+  
+
