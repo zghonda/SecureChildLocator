@@ -23,7 +23,4 @@
     <string name="firebase_web_host" translatable="false">child-locator-a6162.firebaseapp.com</string>
 
     <string name="title_activity_scan">ScanActivity</string>
-    <string name="dummy_button">Dummy Button</string>
-    <string name="dummy_content">DUMMY\nCONTENT</string>
-    <string name="title_activity_scan2">ScanActivity2</string>
 </resources>

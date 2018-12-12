@@ -23,15 +23,12 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
-import java.util.Base64;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 public class ParentActivity extends AppCompatActivity {
 
     private TextView input_txt_email, input_txt_pwd;
-    private TextView txt_email, txt_pwd,txt_gps_data,txt_rcv_data;
+    private TextView txt_email, txt_pwd, txt_gps_data, txt_rcv_data;
     private Button btn_signin_parent;
     private ProgressBar progressBar;
     private FirebaseAuth mAuth;
@@ -45,8 +42,10 @@ public class ParentActivity extends AppCompatActivity {
     private long childCounter;
     private DatabaseReference reference;
     private boolean isKeyGenerated;
-    private final static String FILENAME = "keyfile.pem";
-
+    private final static String FILENAME = "keyfileParent.pem";
+    private double longitude, latitude;
+    private static final int BROADCAST_TIME_PERIOD = 20 * 1000;
+    private String ref;
 
 
     @Override
@@ -83,7 +82,14 @@ public class ParentActivity extends AppCompatActivity {
         btn_genQR.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                generateQR();
+                generateKeyAndQR();
+            }
+        });
+
+        findViewById(R.id.btn_start).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getGpsData();
             }
         });
 
@@ -112,33 +118,16 @@ public class ParentActivity extends AppCompatActivity {
         if (currentUser != null && currentUser.getEmail().equals(mother.email())) {
             views.forEach(v -> v.setVisibility(View.INVISIBLE));
             btn_genQR.setVisibility(View.VISIBLE);
-            File keyFile = new File(getApplicationContext().getFilesDir(), FILENAME);
-            if (keyFile.length() != 0) {
-                final byte[] keyBytes;
-                FileInputStream fis = null;
-                try {
-                    fis = new FileInputStream(keyFile);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-                DataInputStream dis = new DataInputStream(fis);
-                keyBytes = new byte[(int) keyFile.length()];
-                try {
-                    dis.readFully(keyBytes);
-                    dis.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                SecretKey secretKey = new SecretKeySpec(keyBytes, "AES");
+            SecretKey secretKey = readKeyFromFile();
+            if (secretKey != null) {
                 crypto.setSharedKey(secretKey);
                 btn_genQR.setVisibility(View.INVISIBLE);
-                getGpsData();
-
+                findViewById(R.id.btn_start).setVisibility(View.VISIBLE);;
             }
+
+
         }
     }
-
 
     private boolean isInputCredentialsOkay() {
         return input_txt_pwd != null && input_txt_email != null
@@ -167,52 +156,100 @@ public class ParentActivity extends AppCompatActivity {
     }
 
     private void getGpsData() {
-        String refString = new StringBuilder("gpsData").toString();
-        reference = database.getReference(refString);
+        //String refString = new StringBuilder("gpsData").toString();
+        //reference = database.getReference(refString);
         txt_rcv_data.setVisibility(View.VISIBLE);
         txt_gps_data.setVisibility(View.VISIBLE);
         progressBar.setVisibility(View.VISIBLE);
+        findViewById(R.id.btn_start).setVisibility(View.INVISIBLE);
 
-        reference.addValueEventListener(new ValueEventListener() {
+        new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                String value = dataSnapshot.getValue(String.class);
-                motherCounter++;
-                try {
-                    String[] plainTextIV = value.split("separation");
-                    String plainText = crypto.decrypt(plainTextIV[0], new IvParameterSpec(Base64.getDecoder().decode(plainTextIV[1])));
-                    String[] macMessage = plainText.split("separation");
-                    String macReceived = new String(Base64.getDecoder().decode(macMessage[0].getBytes()));
-                    String message = macMessage[1];
-                    String myMac = new String(Base64.getDecoder().decode(crypto.generateHmac(message).getBytes()));
-
-                    if (!myMac.equals(macReceived)) {
-                        throw new Exception("authentication/integrity problem");
-                    }
-                    String[] data = message.split(" ");
-                    double longitude = Double.parseDouble(data[0]);
-                    double latitude  = Double.parseDouble(data[1]);
-                    double seq = Double.parseDouble(data[2]);
-
-                    txt_gps_data.setText(String.format(Locale.getDefault(),"longitude : %2.2f, latitude : %2.2f",longitude,latitude));
+            public void run() {
+                String ref = new StringBuilder("gpsData_").append(motherCounter).toString();
+                reference = database.getReference(ref);
 
 
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                    reference.addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            try {
+                                verifyPacketAndSetData(dataSnapshot.getValue(String.class));
+                                reference.removeEventListener(this);
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                txt_gps_data.setText(e.getMessage());
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+
+
+
+
+
 
             }
+        }, 0, BROADCAST_TIME_PERIOD);
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
 
     }
 
-    private void generateQR() {
+
+    private void verifyPacketAndSetData(String packet) throws Exception {
+        String macReceived;
+        String myMac;
+        String[] plainTextIV = packet.split("separation");
+        String plainText = crypto.decrypt(plainTextIV[0], new IvParameterSpec(Base64.getDecoder().decode(plainTextIV[1])));
+        String[] macMessage = plainText.split("separation");
+        macReceived = new String(Base64.getDecoder().decode(macMessage[0].getBytes()));
+        String message = macMessage[1];
+        myMac = new String(Base64.getDecoder().decode(crypto.generateHmac(message).getBytes()));
+        String[] data = message.split(" ");
+
+        longitude = Double.parseDouble(data[0]);
+        latitude = Double.parseDouble(data[1]);
+        childCounter = Integer.parseInt(data[2]);
+
+
+
+        if (motherCounter != childCounter) {
+            throw new Exception("Reorder attack suspected : motherCounter="+motherCounter+" childCounter="+childCounter);
+        } else if (!myMac.equals(macReceived)) {
+            throw new Exception("Message authentication/integrity compromised");
+        }
+
+        motherCounter++;
+
+        ref = new StringBuilder("gpsData_").append(motherCounter).toString();
+        reference = database.getReference(ref);
+
+        txt_gps_data.setText(String.format(Locale.getDefault(), "longitude : %2.2f, latitude : %2.2f", longitude, latitude));
+
+    }
+
+
+
+    private void generateKeyAndQR() {
         key = crypto.generateSecretKey();
+        writeKeyToFile(key);
+        Intent intent = new Intent(getApplicationContext(), QRActivity.class);
+        intent.putExtra("key", key);
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+    }
+
+    private void writeKeyToFile(SecretKey key) {
         File keyFile = new File(getApplicationContext().getFilesDir(), FILENAME);
         try {
             FileOutputStream fos = new FileOutputStream(keyFile);
@@ -223,14 +260,31 @@ public class ParentActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        Intent intent = new Intent(getApplicationContext(), QRActivity.class);
-        intent.putExtra("key", key);
-        startActivity(intent);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    private SecretKey readKeyFromFile() {
+        File keyFile = new File(getApplicationContext().getFilesDir(), FILENAME);
+        if (keyFile.length() != 0) {
+            final byte[] keyBytes;
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(keyFile);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+            DataInputStream dis = new DataInputStream(fis);
+            keyBytes = new byte[(int) keyFile.length()];
+            try {
+                dis.readFully(keyBytes);
+                dis.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return new SecretKeySpec(keyBytes, "AES");
+        } else {
+            return null;
+        }
+
 
     }
 }

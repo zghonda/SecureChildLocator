@@ -20,7 +20,7 @@
             android:theme="@style/AppTheme">
         <activity
                 android:name=".MainActivity"
-                android:label="@string/title_activity_main"
+                android:label="Secure Child Locator"
                 android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -47,11 +47,6 @@
                 android:name="com.google.android.gms.vision.DEPENDENCIES"
                 android:value="barcode"/>
 
-        <activity
-                android:name=".ScanActivity2"
-                android:label="Key Scanner"
-                android:theme="@style/AppTheme.NoActionBar">
-        </activity>
         <activity
                 android:name=".QRActivity"
                 android:parentActivityName=".ParentActivity"
