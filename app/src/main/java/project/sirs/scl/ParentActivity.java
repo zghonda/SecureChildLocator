@@ -7,7 +7,6 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Base64DataException;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
@@ -165,9 +164,9 @@ public class ParentActivity extends AppCompatActivity {
         progressBar.setVisibility(View.VISIBLE);
         findViewById(R.id.btn_start).setVisibility(View.INVISIBLE);
 
+        Timer timer = new Timer();
 
-
-        new Timer().scheduleAtFixedRate(new TimerTask() {
+        timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
                 String ref = new StringBuilder("gpsData_").append(i).toString();
@@ -184,6 +183,8 @@ public class ParentActivity extends AppCompatActivity {
                                 } catch (Exception e) {
                                     e.printStackTrace();
                                     txt_gps_data.setText(e.getMessage());
+                                    timer.cancel();
+                                    txt_rcv_data.setText("ATTACKED !");
                                 }
                             }
 
@@ -203,40 +204,42 @@ public class ParentActivity extends AppCompatActivity {
 
 
     private void verifyPacketAndSetData(String packet) throws Exception {
+
+
         try{
 
+            String macReceived;
+            String myMac;
+            String[] plainTextIV = packet.split("separation");
+            String plainText = crypto.decrypt(plainTextIV[0], new IvParameterSpec(Base64.getDecoder().decode(plainTextIV[1])));
+            String[] macMessage = plainText.split("separation");
+            macReceived = new String(Base64.getDecoder().decode(macMessage[0].getBytes()));
+            String message = macMessage[1];
+            myMac = new String(Base64.getDecoder().decode(crypto.generateHmac(message).getBytes()));
+            String[] data = message.split(" ");
 
-        String macReceived;
-        String myMac;
-        String[] plainTextIV = packet.split("separation");
-        String plainText = crypto.decrypt(plainTextIV[0], new IvParameterSpec(Base64.getDecoder().decode(plainTextIV[1])));
-        String[] macMessage = plainText.split("separation");
-        macReceived = new String(Base64.getDecoder().decode(macMessage[0].getBytes()));
-        String message = macMessage[1];
-        myMac = new String(Base64.getDecoder().decode(crypto.generateHmac(message).getBytes()));
-        String[] data = message.split(" ");
-
-        longitude = Double.parseDouble(data[0]);
-        latitude = Double.parseDouble(data[1]);
-        childCounter = Integer.parseInt(data[2]);
-
+            longitude = Double.parseDouble(data[0]);
+            latitude = Double.parseDouble(data[1]);
+            childCounter = Integer.parseInt(data[2]);
 
 
-        if (motherCounter != childCounter) {
-            throw new Exception("Reorder attack suspected : motherCounter="+motherCounter+" childCounter="+childCounter);
-        } else if (!myMac.equals(macReceived)) {
-            throw new Exception("Message authentication/integrity compromised");
+
+            if (motherCounter != childCounter) {
+                throw new Exception("Reorder attack suspected : motherCounter="+motherCounter+" childCounter="+childCounter);
+            } else if (!myMac.equals(macReceived)) {
+                throw new Exception("Message authentication/integrity compromised");
+            }
+
+            motherCounter++;
+
+            ref = new StringBuilder("gpsData_").append(motherCounter).toString();
+            reference = database.getReference(ref);
+        }catch(IllegalArgumentException e){
+            throw new Exception("Message integrity compromised");
         }
-
-        motherCounter++;
-
-        ref = new StringBuilder("gpsData_").append(motherCounter).toString();
-        reference = database.getReference(ref);
 
         txt_gps_data.setText(String.format(Locale.getDefault(), "longitude : %2.2f, latitude : %2.2f", longitude, latitude));
-    }catch(Base64DataException e){
-            throw e;
-        }
+
     }
 
 
